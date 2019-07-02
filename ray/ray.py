@@ -14,19 +14,22 @@ class Material:
     emission_colour = (0,0,0)
 
 class SceneObject:
-    def __init__(self, pos):
+    def __init__(self, pos, material = None):
         self.pos = pos
+        if material == None:
+            self.material = Material()
+        else:
+            self.material = material
 
     def intersect(self, ray_origin, ray_dir):
         return False, float("inf"),float("inf")
 
 class Sphere(SceneObject):
     def __init__(self, pos, radius, material = None):
-        SceneObject.__init__(self, pos)
+        SceneObject.__init__(self, pos, material)
         self.radius = radius
         self.radius2 = radius*radius
-        if material == None:
-            self.material = Material()
+        
 
     def intersect(self, ray_origin, ray_dir):
         t0 = float("inf")
@@ -69,12 +72,33 @@ def trace(origin, direction, depth):
 
     if intersected_object == None:
         return BACKGROUND_COLOUR
-
-    surface_colour = intersected_object.material.surface_colour
+    
+    phit = origin + direction*tnear
+    nhit = (phit - intersected_object.pos).normalize()
+    
+    surface_colour = (0,0,0)
+    
+    for scene_object in scene_objects:
+        if scene_object.material.emission_colour[0] > 0:
+            light_dir = (scene_object.pos - phit).normalize()
+            surface_colour = tuple( int(nhit.dot(light_dir)*x) for x in intersected_object.material.surface_colour)
 
     return surface_colour
 
-scene_objects.append(Sphere(Vec3(0,0,-100),5))
+sphere_material1 = Material()
+sphere_material1.surface_colour = (255,0,0)
+scene_objects.append(Sphere(Vec3(-10,0,-100), 5, sphere_material1))
+
+sphere_material2 = Material()
+sphere_material2.surface_colour = (0,255,0)
+scene_objects.append(Sphere(Vec3(10,0,-100),5,sphere_material2))
+
+light_material = Material()
+light_material.emission_colour = (255,255,255)
+light_material.surface_colour = (0,0,0)
+scene_objects.append(Sphere(Vec3(20,20,-50),5,light_material))
+
+count = 0
 
 def render(width,height,fov):
     aspect_ratio = width / float(height)
@@ -93,8 +117,13 @@ def render(width,height,fov):
             ray = Vec3(xx, yy, -1).normalize()
 
             pixels[x,y] = trace(Vec3(0,0,0), ray, 0)
+            
+    filename = "sequence/result_" + str(count) + ".png"
+    print(filename)
+    img.save(filename)
 
-    img.save('result.png')
-
-render(320,240,30)
+for x in range(20):
+    scene_objects[2].pos.x = -60.0 + 120.0*(x/20.0)
+    render(640,480,30)
+    count += 1
 

@@ -8,16 +8,28 @@ class Vec3:
         self.z = float(z)
 
     def __add__(self, other):
-        return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
+        if type(other) is Vec3:    
+            return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
+        else:
+            return Vec3(self.x + other, self.y + other, self.z + other)
 
     def __sub__(self, other):
-        return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
+        if type(other) is Vec3:
+            return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
+        else:
+            return Vec3(self.x - other, self.y - other, self.z - other)
 
     def __mul__(self, other):
-        return Vec3(self.x * other.x, self.y * other.y, self.z * other.z)
+        if type(other) is Vec3:    
+            return Vec3(self.x * other.x, self.y * other.y, self.z * other.z)
+        else:
+            return Vec3(self.x * other, self.y * other, self.z * other)
 
     def __div__(self, other):
-        return Vec3(self.x / other.x, self.y / other.y, self.z / other.z)
+        if type(other) is Vec3:
+            return Vec3(self.x / other.x, self.y / other.y, self.z / other.z)
+        else:
+            return Vec3(self.x / other, self.y / other, self.z / other)
 
     def __getitem__(self, item):
         if item == 0:
