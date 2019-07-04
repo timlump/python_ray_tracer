@@ -123,24 +123,13 @@ sphere_material.surface_colour = Vec3(1.0,1.0,1.0)
 scene_objects.append(Sphere(Vec3(-10,0,-100), 5, sphere_material))
 scene_objects.append(Sphere(Vec3(10,0,-100),5,sphere_material))
 scene_objects.append(Sphere(Vec3(0,0,-80), 5,sphere_material))
+scene_objects.append(Sphere(Vec3(0,0,-150), 50,sphere_material))
 
 light_material = Material()
 light_material.emission_colour = Vec3(50.0,0.0,0.0)
 light_material.surface_colour = Vec3(1.0,1.0,1.0)
 
 scene_objects.append(Sphere(Vec3(10,-10,-50),2,light_material))
-
-light_material = Material()
-light_material.emission_colour = Vec3(0.0,0.0,80.0)
-light_material.surface_colour = Vec3(1.0,1.0,1.0)
-
-scene_objects.append(Sphere(Vec3(0,10,-50),2,light_material))
-
-light_material = Material()
-light_material.emission_colour = Vec3(0.0,80.0,0.0)
-light_material.surface_colour = Vec3(1.0,1.0,1.0)
-
-scene_objects.append(Sphere(Vec3(-10,-10,-50),2,light_material))
 
 pygame.init()
 game_display = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -166,12 +155,19 @@ def render(width,height,fov):
 
 pygame_quitted = False
 
-render(WIDTH,HEIGHT,30)
-pygame.display.flip()
+clock = pygame.time.Clock()
 
-render(WIDTH,HEIGHT,30)
-
-input("Press Enter To End")
+running = True
+while running:
+    clock.tick(5)
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    render(WIDTH,HEIGHT,30)
+    pygame.display.flip()
+    
+    x+= 1.0
 
 pygame.quit()
 
