@@ -1,9 +1,11 @@
+import pygame
 import math
 from mathutils import Vec3
 
-from PIL import Image
-
 MAX_RAY_DEPTH = 3
+
+WIDTH = 320
+HEIGHT = 240
 
 BACKGROUND_COLOUR = Vec3(0,0,0)
 
@@ -132,16 +134,22 @@ light_material = Material()
 light_material.emission_colour = Vec3(0.0,0.0,80.0)
 light_material.surface_colour = Vec3(1.0,1.0,1.0)
 
-scene_objects.append(Sphere(Vec3(-10,10,-50),2,light_material))
+scene_objects.append(Sphere(Vec3(0,10,-50),2,light_material))
+
+light_material = Material()
+light_material.emission_colour = Vec3(0.0,80.0,0.0)
+light_material.surface_colour = Vec3(1.0,1.0,1.0)
+
+scene_objects.append(Sphere(Vec3(-10,-10,-50),2,light_material))
+
+pygame.init()
+game_display = pygame.display.set_mode((WIDTH,HEIGHT))
 
 def render(width,height,fov):
     aspect_ratio = width / float(height)
     angle = math.tan(math.radians(fov / 2.0))
     inv_width = 1.0 / width
     inv_height = 1.0 / height
-
-    img = Image.new('RGB', (width, height), "black")
-    pixels = img.load()
 
     for y in range(height):
         for x in range(width):
@@ -154,10 +162,16 @@ def render(width,height,fov):
             
             rgb = rgb.clamp(0.0, 1.0)
 
-            pixels[x,y] = (int(rgb.x * 255), int(rgb.y * 255), int(rgb.z * 255))
-            
-    filename = "result.png"
-    img.save(filename)
-    
-render(640,480,30)
+            game_display.set_at((x,y), (int(rgb.x * 255), int(rgb.y * 255), int(rgb.z * 255)))
+
+pygame_quitted = False
+
+render(WIDTH,HEIGHT,30)
+pygame.display.flip()
+
+render(WIDTH,HEIGHT,30)
+
+input("Press Enter To End")
+
+pygame.quit()
 
