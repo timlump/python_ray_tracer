@@ -61,6 +61,13 @@ class Sphere(SceneObject):
 
         return True, t0, t1
     
+class Plane(SceneObject):
+    def _init__(self, pos, normal, material = None):
+        SceneObject.__init__(self, pos, material)
+        
+    def intersect(self, ray_origin, ray_dir):
+        return False, float("inf"), float("inf")
+    
 def get_intersecting_object(origin, direction):
     tnear = float("inf")
     scene_object_index = -1
@@ -134,6 +141,9 @@ scene_objects.append(Sphere(Vec3(10,-10,-50),2,light_material))
 pygame.init()
 game_display = pygame.display.set_mode((WIDTH,HEIGHT))
 
+num_chans = 4
+image_bytes = bytearray(WIDTH*HEIGHT*num_chans)
+
 def render(width,height,fov):
     aspect_ratio = width / float(height)
     angle = math.tan(math.radians(fov / 2.0))
@@ -150,24 +160,25 @@ def render(width,height,fov):
             rgb = trace(Vec3(0,0,0), ray, 0)
             
             rgb = rgb.clamp(0.0, 1.0)
-
-            game_display.set_at((x,y), (int(rgb.x * 255), int(rgb.y * 255), int(rgb.z * 255)))
-
+            
+            byte_idx = y*width*num_chans + x*num_chans
+            
+            #pygame is BGRA
+            image_bytes[byte_idx] = int(rgb.z * 255)
+            image_bytes[byte_idx + 1] = int(rgb.y * 255)
+            image_bytes[byte_idx + 2] = int(rgb.x * 255)
+            image_bytes[byte_idx + 3] = 255
+            
 pygame_quitted = False
-
-clock = pygame.time.Clock()
 
 running = True
 while running:
-    clock.tick(5)
-    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
     render(WIDTH,HEIGHT,30)
+    game_display.get_buffer().write(bytes(image_bytes))
     pygame.display.flip()
-    
-    x+= 1.0
 
 pygame.quit()
 
