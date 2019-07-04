@@ -5,13 +5,16 @@ from PIL import Image
 
 MAX_RAY_DEPTH = 3
 
-BACKGROUND_COLOUR = (0,0,0)
+BACKGROUND_COLOUR = Vec3(0,0,0)
 
 scene_objects = []
 
 class Material:
-    surface_colour = (255,255,255)
-    emission_colour = (0,0,0)
+    surface_colour = Vec3(1.0,1.0,1.0)
+    emission_colour = Vec3(0.0,0.0,0.0)
+    
+    def is_light(self):
+        return self.emission_colour.magnitude() > 0.0
 
 class SceneObject:
     def __init__(self, pos, material = None):
@@ -55,50 +58,81 @@ class Sphere(SceneObject):
                 return False, t0, t1
 
         return True, t0, t1
-
-def trace(origin, direction, depth):
+    
+def get_intersecting_object(origin, direction):
     tnear = float("inf")
-
-    intersected_object = None
-
-    for scene_object in scene_objects:
+    scene_object_index = -1
+    
+    for idx,scene_object in enumerate(scene_objects):
         is_intersecting, t0, t1 = scene_object.intersect(origin, direction)
         if is_intersecting:
             if t0 < 0.0:
                 t0 = t1
             if t0 < tnear:
                 tnear = t0
-                intersected_object = scene_object
+                scene_object_index = idx
+    
+    return scene_object_index, tnear
 
-    if intersected_object == None:
+def trace(origin, direction, depth):
+
+    idx, tnear = get_intersecting_object(origin, direction)
+
+    if idx == -1:
         return BACKGROUND_COLOUR
     
-    phit = origin + direction*tnear
-    nhit = (phit - intersected_object.pos).normalize()
+    bias = -0.01
     
-    surface_colour = (0,0,0)
+    phit = origin + direction*(tnear + bias)
+    nhit = (phit - scene_objects[idx].pos).normalize()
     
-    for scene_object in scene_objects:
-        if scene_object.material.emission_colour[0] > 0:
-            light_dir = (scene_object.pos - phit).normalize()
-            surface_colour = tuple( int(nhit.dot(light_dir)*x) for x in intersected_object.material.surface_colour)
-
+    surface_colour = Vec3(0,0,0)
+    if scene_objects[idx].material.is_light():
+        light_intensity = 1.0/tnear
+        
+        if light_intensity > 1.0: light_intensity = 1.0
+        if light_intensity < 0.0: light_intensity = 0.0
+        
+        return scene_objects[idx].material.surface_colour * scene_objects[idx].material.emission_colour * (1.0/tnear)
+    
+    for current_idx, scene_object in enumerate(scene_objects):
+        if scene_object.material.is_light():
+            light_dir = scene_object.pos - phit
+            light_dist = light_dir.magnitude()
+            light_dir = light_dir.normalize()
+            
+            shadow_ray_idx, tnear = get_intersecting_object(phit, light_dir)
+            if shadow_ray_idx == current_idx:
+                object_colour = scene_objects[idx].material.surface_colour
+                light_colour = scene_objects[shadow_ray_idx].material.emission_colour
+                
+                light_intensity = nhit.dot(light_dir)*(1.0/light_dist)
+                
+                if light_intensity > 1.0: light_intensity = 1.0
+                if light_intensity < 0.0: light_intensity = 0.0
+                
+                surface_colour += (object_colour*light_colour)*light_intensity
+    
     return surface_colour
 
-sphere_material1 = Material()
-sphere_material1.surface_colour = (255,0,0)
-scene_objects.append(Sphere(Vec3(-10,0,-100), 5, sphere_material1))
+sphere_material = Material()
+sphere_material.surface_colour = Vec3(1.0,1.0,1.0)
 
-sphere_material2 = Material()
-sphere_material2.surface_colour = (0,255,0)
-scene_objects.append(Sphere(Vec3(10,0,-100),5,sphere_material2))
+scene_objects.append(Sphere(Vec3(-10,0,-100), 5, sphere_material))
+scene_objects.append(Sphere(Vec3(10,0,-100),5,sphere_material))
+scene_objects.append(Sphere(Vec3(0,0,-80), 5,sphere_material))
 
 light_material = Material()
-light_material.emission_colour = (255,255,255)
-light_material.surface_colour = (0,0,0)
-scene_objects.append(Sphere(Vec3(20,20,-50),5,light_material))
+light_material.emission_colour = Vec3(50.0,0.0,0.0)
+light_material.surface_colour = Vec3(1.0,1.0,1.0)
 
-count = 0
+scene_objects.append(Sphere(Vec3(10,-10,-50),2,light_material))
+
+light_material = Material()
+light_material.emission_colour = Vec3(0.0,0.0,80.0)
+light_material.surface_colour = Vec3(1.0,1.0,1.0)
+
+scene_objects.append(Sphere(Vec3(-10,10,-50),2,light_material))
 
 def render(width,height,fov):
     aspect_ratio = width / float(height)
@@ -115,15 +149,15 @@ def render(width,height,fov):
             yy = (1 - 2 * ((y + 0.5) * inv_height)) * angle
 
             ray = Vec3(xx, yy, -1).normalize()
-
-            pixels[x,y] = trace(Vec3(0,0,0), ray, 0)
             
-    filename = "sequence/result_" + str(count) + ".png"
-    print(filename)
-    img.save(filename)
+            rgb = trace(Vec3(0,0,0), ray, 0)
+            
+            rgb = rgb.clamp(0.0, 1.0)
 
-for x in range(20):
-    scene_objects[2].pos.x = -60.0 + 120.0*(x/20.0)
-    render(640,480,30)
-    count += 1
+            pixels[x,y] = (int(rgb.x * 255), int(rgb.y * 255), int(rgb.z * 255))
+            
+    filename = "result.png"
+    img.save(filename)
+    
+render(640,480,30)
 

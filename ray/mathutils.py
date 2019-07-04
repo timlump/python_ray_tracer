@@ -69,3 +69,17 @@ class Vec3:
     def normalize(self):
         mag = self.magnitude()
         return Vec3(self.x / mag, self.y / mag, self.z / mag)
+    
+    def clamp(self, min_value, max_value):
+        
+        result = Vec3(self.x, self.y, self.z)
+        
+        if result.x > max_value : result.x = max_value
+        if result.y > max_value : result.y = max_value
+        if result.z > max_value : result.z = max_value
+            
+        if result.x < min_value : result.x = min_value
+        if result.y < min_value : result.y = min_value
+        if result.z < min_value : result.z = min_value
+        
+        return result
